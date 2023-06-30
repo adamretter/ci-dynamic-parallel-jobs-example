@@ -17,6 +17,11 @@ jobs:
         id: set-files # Give it an id to handle to get step outputs in the outputs key above
         run: echo "::set-output name=file::$(ls data/*.xml | jq -R -s -c 'split("\n")[:-1]')"
         # Define step output named file based on ls command transformed to JSON thanks to jq
+      - name: Cache Data folder for lint-file Jobs
+        uses: actions/cache/save@v3
+        with:
+          path: data
+          key: $GITHUB_SHA
   lint-file:
     runs-on: ubuntu-latest
     needs: [list-xml-files] # Depends on previous job
@@ -24,6 +29,11 @@ jobs:
       matrix:
         file: ${{fromJson(needs.list-xml-files.outputs.file)}} # Create matrix strategy from XML files dynamically
     steps:
+      - name: Get Cached Data folder
+        uses: actions/cache/restore@v3
+        with:
+          path: data
+          key: $GITHUB_SHA
       - name: Install XML Lint
         run: sudo apt-get install -y libxml2-utils
       - name: Run XML Lint
